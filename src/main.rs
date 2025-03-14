@@ -2,11 +2,19 @@ use image::ImageBuffer;
 use image::{Rgb, RgbImage};
 use rand::{Rng, SeedableRng};
 
-// NOTE: Add a 20px padding to the final image
-const IMG_HEIGHT: usize = 400;
-const IMG_WIDTH: usize = 400;
-const MASK_HEIGHT: usize = IMG_HEIGHT / 80;
-const MASK_WIDTH: usize = IMG_WIDTH / 80;
+const BLOCK_WIDTH: usize = 70;
+const BLOCK_HEIGHT: usize = 70;
+const PADDING: usize = 35;
+
+// An Icon will have 5 blocks
+const IMG_HEIGHT: usize = PADDING + (5 * BLOCK_HEIGHT) + PADDING;
+const IMG_WIDTH: usize = PADDING + (5 * BLOCK_WIDTH) + PADDING;
+
+// The mask is  5 x 5
+const MASK_HEIGHT: usize = 5;
+const MASK_WIDTH: usize = 5;
+
+// Colors
 const LIGHT_BLUE: [u8; 3] = [131, 173, 208];
 const BACKGROUND_COLOR: [u8; 3] = [240, 240, 240];
 
@@ -25,11 +33,10 @@ impl Icon {
             for (x, val) in row.iter().enumerate()
             {
                 if *val == true {
-                    let x_start = x * 80;
-                    let x_end = x_start + 80;
-
-                    let y_start = y * 80;
-                    let y_end = y_start + 80;
+                    let x_start = x * BLOCK_WIDTH;
+                    let x_end = x_start + BLOCK_WIDTH;
+                    let y_start = y * BLOCK_HEIGHT;
+                    let y_end = y_start + BLOCK_HEIGHT;
                     mask_active.push(((x_start..x_end), (y_start..y_end)));
                 }
             }
@@ -40,7 +47,7 @@ impl Icon {
         for (x_range, y_range) in mask_active.iter() {
             for x in x_range.clone() {
                 for y in y_range.clone(){
-                    let pixel = self.0.get_pixel_mut(x as u32, y as u32);
+                    let pixel = self.0.get_pixel_mut((x + PADDING) as u32, (y + PADDING) as u32);
                     *pixel = image::Rgb(LIGHT_BLUE);
                 }
             }            
