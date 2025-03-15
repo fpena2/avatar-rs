@@ -43,12 +43,12 @@ impl Mask {
 
         for (y, row) in self.matrix.iter().enumerate() {
             for (x, val) in row.iter().enumerate() {
-                if *val == true {
+                if *val {
                     let x_start = x * new_width;
                     let x_end = x_start + new_width;
                     let y_start = y * new_height;
                     let y_end = y_start + new_height;
-                    active_ranges.push(((x_start..x_end), (y_start..y_end)));
+                    active_ranges.push((x_start..x_end, y_start..y_end));
                 }
             }
         }
