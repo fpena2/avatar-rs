@@ -6,38 +6,29 @@ const BLOCK_WIDTH: usize = 70;
 const BLOCK_HEIGHT: usize = 70;
 const PADDING: usize = 35;
 
-// An Icon will have 5 blocks
-const IMG_HEIGHT: usize = PADDING + (5 * BLOCK_HEIGHT) + PADDING;
-const IMG_WIDTH: usize = PADDING + (5 * BLOCK_WIDTH) + PADDING;
-
-// The mask is  5 x 5
-const MASK_HEIGHT: usize = 5;
-const MASK_WIDTH: usize = 5;
-
 // Colors
 const LIGHT_BLUE: [u8; 3] = [131, 173, 208];
 const BACKGROUND_COLOR: [u8; 3] = [240, 240, 240];
 
-struct Icon(RgbImage);
+struct Mask {
+    matrix: [[bool; Self::MASK_WIDTH]; Self::MASK_HEIGHT],
+}
 
-impl Icon {
+impl Mask {
+    const MASK_HEIGHT: usize = 5;
+    const MASK_WIDTH: usize = 5;
+
     fn new(seed: u64) -> Self {
-        let mut icon = Icon(RgbImage::from_pixel(
-            IMG_WIDTH as u32,
-            IMG_HEIGHT as u32,
-            image::Rgb(BACKGROUND_COLOR),
-        ));
-
-        let mask = Self::generate_random_mask(seed);
-        let active_blocks = Self::active_blocks(mask);
-        icon.draw(active_blocks);
-        icon
+        Mask {
+            matrix: Self::generate_matrix(seed),
+        }
     }
 
-    fn generate_random_mask(seed: u64) -> [[bool; MASK_WIDTH]; MASK_HEIGHT] {
+    fn generate_matrix(seed: u64) -> [[bool; Self::MASK_WIDTH]; Self::MASK_HEIGHT] {
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
-        let mut mask = [[false; MASK_WIDTH]; MASK_HEIGHT];
-        for i in 0..5 {
+        let mut mask = [[false; Self::MASK_WIDTH]; Self::MASK_HEIGHT];
+
+        for i in 0..Self::MASK_HEIGHT {
             // `c` and `e` are a reflection of `a` and `b`
             let a = rng.random_bool(0.5);
             let b = rng.random_bool(0.5);
@@ -47,24 +38,46 @@ impl Icon {
         mask
     }
 
-    fn active_blocks(mask: [[bool; MASK_WIDTH]; MASK_HEIGHT]) -> Vec<(Range<usize>, Range<usize>)> {
-        let mut active: Vec<(Range<usize>, Range<usize>)> = vec![];
-        for (y, row) in mask.iter().enumerate() {
+    fn expanded(&self, new_width: usize, new_height: usize) -> Vec<(Range<usize>, Range<usize>)> {
+        let mut active_ranges: Vec<(Range<usize>, Range<usize>)> = vec![];
+
+        for (y, row) in self.matrix.iter().enumerate() {
             for (x, val) in row.iter().enumerate() {
                 if *val == true {
-                    let x_start = x * BLOCK_WIDTH;
-                    let x_end = x_start + BLOCK_WIDTH;
-                    let y_start = y * BLOCK_HEIGHT;
-                    let y_end = y_start + BLOCK_HEIGHT;
-                    active.push(((x_start..x_end), (y_start..y_end)));
+                    let x_start = x * new_width;
+                    let x_end = x_start + new_width;
+                    let y_start = y * new_height;
+                    let y_end = y_start + new_height;
+                    active_ranges.push(((x_start..x_end), (y_start..y_end)));
                 }
             }
         }
-        active
+        active_ranges
+    }
+}
+
+struct Icon(RgbImage);
+
+impl Icon {
+    // An Icon will have 5 blocks
+    const IMG_HEIGHT: usize = PADDING + (5 * BLOCK_HEIGHT) + PADDING;
+    const IMG_WIDTH: usize = PADDING + (5 * BLOCK_WIDTH) + PADDING;
+
+    fn new(seed: u64) -> Self {
+        let mut icon = Icon(RgbImage::from_pixel(
+            Self::IMG_WIDTH as u32,
+            Self::IMG_HEIGHT as u32,
+            image::Rgb(BACKGROUND_COLOR),
+        ));
+
+        let mask = Mask::new(seed);
+        let ranges = mask.expanded(BLOCK_WIDTH, BLOCK_HEIGHT);
+        icon.draw(ranges);
+        icon
     }
 
-    fn draw(&mut self, active_blocks: Vec<(Range<usize>, Range<usize>)>) {
-        for (x_range, y_range) in active_blocks.iter() {
+    fn draw(&mut self, active_ranges: Vec<(Range<usize>, Range<usize>)>) {
+        for (x_range, y_range) in active_ranges.iter() {
             for x in x_range.clone() {
                 for y in y_range.clone() {
                     let pixel = self
