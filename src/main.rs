@@ -1,4 +1,4 @@
-use image::RgbImage;
+use image::{Rgb, RgbImage};
 use rand::{Rng, SeedableRng};
 use std::ops::Range;
 
@@ -7,8 +7,8 @@ const BLOCK_HEIGHT: usize = 70;
 const PADDING: usize = 35;
 
 // Colors
-const LIGHT_BLUE: [u8; 3] = [131, 173, 208];
-const BACKGROUND_COLOR: [u8; 3] = [240, 240, 240];
+const LIGHT_BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
+const BACKGROUND_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
 
 struct Mask {
     matrix: [[bool; Self::MASK_WIDTH]; Self::MASK_HEIGHT],
@@ -67,7 +67,7 @@ impl Icon {
         let mut icon = Icon(RgbImage::from_pixel(
             Self::IMG_WIDTH as u32,
             Self::IMG_HEIGHT as u32,
-            image::Rgb(BACKGROUND_COLOR),
+            BACKGROUND_COLOR,
         ));
 
         let mask = Mask::new(seed);
@@ -83,7 +83,7 @@ impl Icon {
                     let pixel = self
                         .0
                         .get_pixel_mut((x + PADDING) as u32, (y + PADDING) as u32);
-                    *pixel = image::Rgb(LIGHT_BLUE);
+                    *pixel = LIGHT_BLUE_COLOR;
                 }
             }
         }
