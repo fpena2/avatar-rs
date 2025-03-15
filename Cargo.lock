@@ -91,6 +91,7 @@ dependencies = [
  "criterion",
  "image",
  "rand 0.9.0",
+ "rayon",
 ]
 
 [[package]]
