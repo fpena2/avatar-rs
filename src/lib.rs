@@ -1,5 +1,6 @@
 use image::{Rgb, RgbImage};
 use rand::{Rng, SeedableRng};
+use rayon::prelude::*;
 use std::ops::Range;
 
 const BLOCK_WIDTH: usize = 70;
@@ -39,20 +40,22 @@ impl Mask {
     }
 
     fn expanded(&self, new_width: usize, new_height: usize) -> Vec<(Range<usize>, Range<usize>)> {
-        let mut active_ranges: Vec<(Range<usize>, Range<usize>)> = vec![];
-
-        for (y, row) in self.matrix.iter().enumerate() {
-            for (x, val) in row.iter().enumerate() {
-                if *val {
-                    let x_start = x * new_width;
-                    let x_end = x_start + new_width;
-                    let y_start = y * new_height;
-                    let y_end = y_start + new_height;
-                    active_ranges.push((x_start..x_end, y_start..y_end));
-                }
-            }
-        }
-        active_ranges
+        self.matrix
+            .par_iter()
+            .enumerate()
+            .flat_map(|(y, row)| {
+                row.par_iter()
+                    .enumerate()
+                    .filter(|&(_, &val)| val)
+                    .map(move |(x, _)| {
+                        let x_start = x * new_width;
+                        let x_end = x_start + new_width;
+                        let y_start = y * new_height;
+                        let y_end = y_start + new_height;
+                        (x_start..x_end, y_start..y_end)
+                    })
+            })
+            .collect()
     }
 }
 
