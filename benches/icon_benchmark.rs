@@ -5,5 +5,10 @@ fn benchmark_icon_new(c: &mut Criterion) {
     c.bench_function("Icon::new", |b| b.iter(|| Icon::new(black_box(1253))));
 }
 
-criterion_group!(benches, benchmark_icon_new);
+criterion_group! {
+    name = benches;
+    config = Criterion::default().sample_size(1000);
+    targets = benchmark_icon_new
+}
+
 criterion_main!(benches);

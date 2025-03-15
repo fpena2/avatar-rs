@@ -77,9 +77,9 @@ impl Icon {
     }
 
     fn draw(&mut self, active_ranges: Vec<(Range<usize>, Range<usize>)>) {
-        for (x_range, y_range) in active_ranges.iter() {
-            for x in x_range.clone() {
-                for y in y_range.clone() {
+        for (x_range, y_range) in active_ranges {
+            for y in y_range.start..y_range.end {
+                for x in x_range.start..x_range.end {
                     let pixel = self
                         .0
                         .get_pixel_mut((x + PADDING) as u32, (y + PADDING) as u32);
