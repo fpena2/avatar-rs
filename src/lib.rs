@@ -11,25 +11,21 @@ const IMG_HEIGHT: u32 = PADDING + (BLOCK_HEIGHT * 5) + PADDING;
 const IMG_WIDTH: u32 = PADDING + (BLOCK_WIDTH * 5) + PADDING;
 // Colors
 type Color = Rgb<u8>;
-const LIGHT_BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
-const BACKGROUND_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
+const BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
+const GRAY_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
 
 pub struct Icon(RgbImage);
 
 impl Icon {
     pub fn new(seed: u64) -> Self {
-        let mut canvas = RgbImage::from_pixel(IMG_WIDTH, IMG_HEIGHT, BACKGROUND_COLOR);
+        let mut canvas = RgbImage::from_pixel(IMG_WIDTH, IMG_HEIGHT, GRAY_COLOR);
         Self::draw(seed, &mut canvas);
         Icon(canvas)
     }
 
     fn draw(seed: u64, canvas: &mut RgbImage) {
         fn get_color(of_image: bool) -> Option<Color> {
-            if of_image {
-                Some(LIGHT_BLUE_COLOR)
-            } else {
-                None
-            }
+            if of_image { Some(BLUE_COLOR) } else { None }
         }
 
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
