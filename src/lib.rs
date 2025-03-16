@@ -3,16 +3,18 @@ use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
 
 // Blocks
+const NUM_BLOCKS: u32 = 5;
 const BLOCK_WIDTH: u32 = 70;
 const BLOCK_HEIGHT: u32 = 70;
 const PADDING: u32 = 35;
 // Image
-const IMG_HEIGHT: u32 = PADDING + (BLOCK_HEIGHT * 5) + PADDING;
-const IMG_WIDTH: u32 = PADDING + (BLOCK_WIDTH * 5) + PADDING;
+const IMG_HEIGHT: u32 = PADDING + (BLOCK_HEIGHT * NUM_BLOCKS) + PADDING;
+const IMG_WIDTH: u32 = PADDING + (BLOCK_WIDTH * NUM_BLOCKS) + PADDING;
 // Colors
-type Color = Rgb<u8>;
 const BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
 const GRAY_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
+// Compile-time assertions
+const _: () = assert!(BLOCK_WIDTH == BLOCK_HEIGHT, "Blocks must be squares");
 
 pub struct Icon(RgbImage);
 
@@ -24,16 +26,12 @@ impl Icon {
     }
 
     fn draw(seed: u64, canvas: &mut RgbImage) {
-        fn get_color(of_image: bool) -> Option<Color> {
-            if of_image { Some(BLUE_COLOR) } else { None }
-        }
-
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
-        for block_index in (0..5).map(|v| v * 70) {
+        for block_index in (0..NUM_BLOCKS).map(|v| v * 70) {
             let base = PADDING + block_index;
-            let block_a_type = get_color(rng.random_bool(0.5));
-            let block_b_type = get_color(rng.random_bool(0.5));
-            let block_c_type = get_color(rng.random_bool(0.5));
+            let block_a_type = rng.random_bool(0.5).then(|| BLUE_COLOR);
+            let block_b_type = rng.random_bool(0.5).then(|| BLUE_COLOR);
+            let block_c_type = rng.random_bool(0.5).then(|| BLUE_COLOR);
 
             // A
             if let Some(pixel) = block_a_type {
