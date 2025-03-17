@@ -107,5 +107,8 @@ mod tests {
 
         let pixel = canvas.get_pixel(PADDING + 70, PADDING + 70);
         assert_eq!(*pixel, BLUE_COLOR);
+
+        let pixel = canvas.get_pixel(0, 0);
+        assert_eq!(*pixel, GRAY_COLOR);
     }
 }
