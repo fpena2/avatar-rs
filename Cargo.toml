@@ -17,11 +17,3 @@ criterion = "0.5.1"
 [[bench]]
 name = "benchmark"
 harness = false
-
-[[bench]]
-name = "icon_benchmark"
-harness = false
-
-[[bench]]
-name = "mask_benchmark"
-harness = false
