@@ -4,8 +4,7 @@ Library for generating semi-random avatars.
 
 Inspired by Github's default avatars.
 
-
-## Usage:
+## Usage
 
 ```rust
 fn main() {
@@ -14,3 +13,7 @@ fn main() {
     icon.save("test.png").unwrap();
 }
 ```
+
+## Example
+
+![example](/static/example.png)
