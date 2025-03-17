@@ -21,8 +21,64 @@ pub struct Icon(RgbImage);
 impl Icon {
     pub fn new(seed: u64) -> Self {
         let mut canvas = RgbImage::from_pixel(IMG_WIDTH, IMG_HEIGHT, GRAY_COLOR);
-        Self::draw(seed, &mut canvas);
+        Self::draw_2(seed, &mut canvas);
         Icon(canvas)
+    }
+
+    fn draw_2(seed: u64, canvas: &mut RgbImage) {
+        let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
+        let block_types: Vec<(Option<Rgb<u8>>, Option<Rgb<u8>>, Option<Rgb<u8>>)> = (0..NUM_BLOCKS)
+            .map(|_| {
+                (
+                    rng.random_bool(0.5).then(|| BLUE_COLOR),
+                    rng.random_bool(0.5).then(|| BLUE_COLOR),
+                    rng.random_bool(0.5).then(|| BLUE_COLOR),
+                )
+            })
+            .collect();
+
+        fn index(i: u32) -> usize {
+            match i {
+                x if x <= PADDING + 70 => 0,
+                x if x >= PADDING + 70 && x <= PADDING + 140 => 1,
+                x if x >= PADDING + 140 && x <= PADDING + 210 => 2,
+                x if x >= PADDING + 210 && x <= PADDING + 280 => 3,
+                x if x >= PADDING + 280 && x <= PADDING + 350 => 4,
+                x if x >= PADDING + 350 && x <= PADDING + 420 => 5,
+                _ => unimplemented!(),
+            }
+        }
+
+        canvas
+            .par_enumerate_pixels_mut()
+            .filter(|&(x, y, _)| {
+                x > PADDING && x < IMG_WIDTH - PADDING && y > PADDING && y < IMG_HEIGHT - PADDING
+            })
+            .for_each(|(x, y, pixel)| {
+                if let Some((a, b, c)) = block_types.get(index(y)) {
+                    if let Some(color) = a {
+                        if x > PADDING + BLOCK_WIDTH * 0 && x < PADDING + BLOCK_WIDTH * 1 {
+                            *pixel = *color;
+                        }
+                        if x > PADDING + BLOCK_WIDTH * 4 && x < PADDING + BLOCK_WIDTH * 5 {
+                            *pixel = *color;
+                        }
+                    }
+                    if let Some(color) = b {
+                        if x >= PADDING + BLOCK_WIDTH * 1 && x <= PADDING + BLOCK_WIDTH * 2 {
+                            *pixel = *color;
+                        }
+                        if x >= PADDING + BLOCK_WIDTH * 3 && x <= PADDING + BLOCK_WIDTH * 4 {
+                            *pixel = *color;
+                        }
+                    }
+                    if let Some(color) = c {
+                        if x >= PADDING + BLOCK_WIDTH * 2 && x <= PADDING + BLOCK_WIDTH * 3 {
+                            *pixel = *color;
+                        }
+                    }
+                }
+            });
     }
 
     fn draw(seed: u64, canvas: &mut RgbImage) {
