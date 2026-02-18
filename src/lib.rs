@@ -1,79 +1,50 @@
-use image::{Rgb, RgbImage};
-use rand::{Rng, SeedableRng};
+use image::{ImageBuffer, Rgb, RgbImage};
+use rand::{Rng, RngCore, SeedableRng, rngs::SmallRng};
+
+// Colors
+const BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
+const GRAY_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
 
 // Blocks
-pub const NUM_BLOCKS: u32 = 5;
-pub const BLOCK_WIDTH: u32 = 70;
-pub const BLOCK_HEIGHT: u32 = 70;
-pub const PADDING: u32 = 35;
-// Image
-pub const IMG_HEIGHT: u32 = PADDING + (BLOCK_HEIGHT * NUM_BLOCKS) + PADDING;
-pub const IMG_WIDTH: u32 = PADDING + (BLOCK_WIDTH * NUM_BLOCKS) + PADDING;
-// Colors
-pub const BLUE_COLOR: Rgb<u8> = Rgb([131, 173, 208]);
-pub const GRAY_COLOR: Rgb<u8> = Rgb([240, 240, 240]);
-// Compile-time assertions
-const _: () = assert!(BLOCK_WIDTH == BLOCK_HEIGHT, "Blocks must be squares");
+const NUM_BLOCKS: u32 = 5;
+const BLOCK_WIDTH: u32 = 70;
+const BLOCK_HEIGHT: u32 = 70;
 
-pub struct Icon(RgbImage);
+// Avatar
+const AVATAR_WIDTH: u32 = BLOCK_WIDTH * NUM_BLOCKS;
+const AVATAR_HEIGHT: u32 = BLOCK_HEIGHT * NUM_BLOCKS;
 
-impl Icon {
+pub struct Avatar {
+    data: RgbImage,
+}
+
+impl Avatar {
     pub fn new(seed: u64) -> Self {
-        let mut canvas = RgbImage::from_pixel(IMG_WIDTH, IMG_HEIGHT, GRAY_COLOR);
-        Self::draw(seed, &mut canvas);
-        Icon(canvas)
+        let rng = SmallRng::seed_from_u64(seed);
+        let logical_map = generate_logical_map(rng);
+        let data = ImageBuffer::from_fn(AVATAR_WIDTH, AVATAR_HEIGHT, |x, y| {
+            let block_row = y / BLOCK_HEIGHT;
+            let block_col = x / BLOCK_WIDTH;
+            if logical_map[block_row as usize][block_col as usize] {
+                BLUE_COLOR
+            } else {
+                GRAY_COLOR
+            }
+        });
+
+        Avatar { data }
     }
 
-    fn draw(seed: u64, canvas: &mut RgbImage) {
-        let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
-        for index in 0..NUM_BLOCKS {
-            let block_a_type = rng.random_bool(0.5).then_some(BLUE_COLOR);
-            let block_b_type = rng.random_bool(0.5).then_some(BLUE_COLOR);
-            let block_c_type = rng.random_bool(0.5).then_some(BLUE_COLOR);
-
-            let y_start = PADDING + BLOCK_HEIGHT * index;
-            let y_end = y_start + BLOCK_HEIGHT;
-
-            // A
-            if let Some(pixel) = block_a_type {
-                for y in y_start..y_end {
-                    for x in PADDING..PADDING + 70 {
-                        canvas.put_pixel(x, y, pixel);
-                    }
-                    // A's reflection
-                    for x in PADDING + 280..PADDING + 350 {
-                        canvas.put_pixel(x, y, pixel);
-                    }
-                }
-            }
-
-            // B
-            if let Some(pixel) = block_b_type {
-                for y in y_start..y_end {
-                    for x in PADDING + 70..PADDING + 140 {
-                        canvas.put_pixel(x, y, pixel);
-                    }
-                    // B's reflection
-                    for x in PADDING + 210..PADDING + 280 {
-                        canvas.put_pixel(x, y, pixel);
-                    }
-                }
-            }
-
-            // C
-            if let Some(pixel) = block_c_type {
-                for y in y_start..y_end {
-                    for x in PADDING + 140..PADDING + 210 {
-                        canvas.put_pixel(x, y, pixel);
-                    }
-                }
-            }
-        }
+    pub fn save(&self, path: &str) -> Result<(), image::ImageError> {
+        self.data.save(path)
     }
+}
 
-    pub fn save(self, path: &str) -> Result<(), image::ImageError> {
-        self.0.save(path)
-    }
+fn generate_logical_map(mut rng: impl RngCore) -> [[bool; 5]; 5] {
+    std::array::from_fn(|_| {
+        let (c1, c2) = (rng.random_bool(0.5), rng.random_bool(0.5));
+        [c1, c2, rng.random_bool(0.5), c2, c1]
+    })
 }
 
 #[cfg(test)]
@@ -82,33 +53,30 @@ mod tests {
     use image::ImageError;
 
     #[test]
-    fn test_icon_creation() {
-        let seed = 12345;
-        let icon = Icon::new(seed);
-        assert_eq!(icon.0.width(), IMG_WIDTH);
-        assert_eq!(icon.0.height(), IMG_HEIGHT);
+    fn logical_map_should_mirror() {
+        let rng = SmallRng::seed_from_u64(1);
+        let map = generate_logical_map(rng);
+        for row in map {
+            assert_eq!((row[0], row[1]), (row[4], row[3]));
+        }
     }
 
     #[test]
-    fn test_icon_save() -> Result<(), ImageError> {
+    fn image_data_should_extand_from_map() -> Result<(), ImageError> {
         let seed = 12345;
-        let icon = Icon::new(seed);
-        let path = "test_icon_save.png";
-        icon.save(path)?;
+        let icon = Avatar::new(seed);
+
+        assert_eq!(icon.data.width(), BLOCK_WIDTH * NUM_BLOCKS);
+        assert_eq!(icon.data.height(), BLOCK_HEIGHT * NUM_BLOCKS);
+
+        let c1 = icon.data.get_pixel(0, 0); // 0 - 69
+        let c2 = icon.data.get_pixel(70, 0); // 70 - 139
+        let _c3 = icon.data.get_pixel(140, 0); // 140 - 209
+        let c4 = icon.data.get_pixel(210, 0); // 210 - 279
+        let c5 = icon.data.get_pixel(280, 0); // 280 - 349
+
+        assert_eq!((c1, c2), (c5, c4));
+
         Ok(())
-    }
-
-    #[test]
-    fn test_draw_function() {
-        let seed = 12345;
-        let mut canvas = RgbImage::from_pixel(IMG_WIDTH, IMG_HEIGHT, GRAY_COLOR);
-
-        Icon::draw(seed, &mut canvas);
-
-        let pixel = canvas.get_pixel(PADDING + 70, PADDING + 70);
-        assert_eq!(*pixel, BLUE_COLOR);
-
-        let pixel = canvas.get_pixel(0, 0);
-        assert_eq!(*pixel, GRAY_COLOR);
     }
 }
